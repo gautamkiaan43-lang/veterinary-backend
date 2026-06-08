@@ -8,12 +8,12 @@ class AttendanceService {
             SELECT 
                 u.id, u.name, u.role,
                 a.check_in, a.check_out, a.working_hours, a.status,
-                (SELECT COUNT(*) FROM Appointments WHERE doctor_id = u.id AND DATE(appointment_date) = ?) as aptCount,
-                (SELECT COUNT(*) FROM Invoices WHERE doctor_id = u.id AND invoice_date = ?) as invoiceCount,
+                (SELECT COUNT(*) FROM appointments WHERE doctor_id = u.id AND DATE(appointment_date) = ?) as aptCount,
+                (SELECT COUNT(*) FROM invoices WHERE doctor_id = u.id AND invoice_date = ?) as invoiceCount,
                 (SELECT COUNT(*) FROM Clinical_Encounters WHERE doctor_id = u.id AND encounter_date = ?) as encounterCount,
-                (SELECT COUNT(*) FROM Home_Visits hv JOIN Appointments apt ON hv.appointment_id = apt.id WHERE hv.doctor_id = u.id AND DATE(apt.appointment_date) = ?) as hvCount
-            FROM Users u
-            LEFT JOIN Attendance a ON u.id = a.user_id AND a.attendance_date = ?
+                (SELECT COUNT(*) FROM home_visits hv JOIN appointments apt ON hv.appointment_id = apt.id WHERE hv.doctor_id = u.id AND DATE(apt.appointment_date) = ?) as hvCount
+            FROM users u
+            LEFT JOIN attendance a ON u.id = a.user_id AND a.attendance_date = ?
             WHERE u.status = 'Active' OR u.status = 'On Leave'
             ORDER BY u.name ASC
         `, [date, date, date, date, date]);
@@ -47,7 +47,7 @@ class AttendanceService {
     async getPersonalHistory(userId) {
         const [rows] = await db.query(`
             SELECT DATE_FORMAT(attendance_date, '%Y-%m-%d') as date, check_in as checkIn, check_out as checkOut, working_hours as hours, status
-            FROM Attendance
+            FROM attendance
             WHERE user_id = ?
             ORDER BY attendance_date DESC
             LIMIT 30
@@ -63,12 +63,12 @@ class AttendanceService {
 
     async checkIn(userId, date, time) {
         // Check if already checked in
-        const [existing] = await db.query('SELECT id FROM Attendance WHERE user_id = ? AND attendance_date = ?', [userId, date]);
+        const [existing] = await db.query('SELECT id FROM attendance WHERE user_id = ? AND attendance_date = ?', [userId, date]);
         if (existing.length > 0) throw new Error('Already checked in today');
         
         const id = 'att-' + crypto.randomUUID().slice(0, 8);
         await db.query(`
-            INSERT INTO Attendance (id, user_id, attendance_date, check_in, status)
+            INSERT INTO attendance (id, user_id, attendance_date, check_in, status)
             VALUES (?, ?, ?, ?, 'Present')
         `, [id, userId, date, time]);
         
@@ -76,7 +76,7 @@ class AttendanceService {
     }
 
     async checkOut(userId, date, time) {
-        const [existing] = await db.query('SELECT id, check_in FROM Attendance WHERE user_id = ? AND attendance_date = ?', [userId, date]);
+        const [existing] = await db.query('SELECT id, check_in FROM attendance WHERE user_id = ? AND attendance_date = ?', [userId, date]);
         if (existing.length === 0) throw new Error('No check-in found for today');
         if (!existing[0].check_in) throw new Error('No check-in time recorded');
         
@@ -94,7 +94,7 @@ class AttendanceService {
         if (totalHours < 0) totalHours = 0;
 
         await db.query(`
-            UPDATE Attendance 
+            UPDATE attendance 
             SET check_out = ?, working_hours = ?
             WHERE id = ?
         `, [time, totalHours, existing[0].id]);

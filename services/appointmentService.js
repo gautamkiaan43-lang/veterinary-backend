@@ -5,10 +5,10 @@ class AppointmentService {
     async getAllAppointments(filters = {}) {
         let query = `
             SELECT a.*, DATE_FORMAT(a.appointment_date, '%Y-%m-%d') as appointment_date, p.name as petName, u.name as doctorName, o.id as ownerId, o.name as ownerName
-            FROM Appointments a
-            JOIN Pets p ON a.pet_id = p.id
-            LEFT JOIN Pet_Owners o ON p.owner_id = o.id
-            LEFT JOIN Users u ON a.doctor_id = u.id
+            FROM appointments a
+            JOIN pets p ON a.pet_id = p.id
+            LEFT JOIN pet_owners o ON p.owner_id = o.id
+            LEFT JOIN users u ON a.doctor_id = u.id
             WHERE 1=1
         `;
         const params = [];
@@ -35,10 +35,10 @@ class AppointmentService {
     async getAppointmentById(id) {
         const query = `
             SELECT a.*, DATE_FORMAT(a.appointment_date, '%Y-%m-%d') as appointment_date, p.name as petName, u.name as doctorName, o.id as ownerId, o.name as ownerName
-            FROM Appointments a
-            JOIN Pets p ON a.pet_id = p.id
-            LEFT JOIN Pet_Owners o ON p.owner_id = o.id
-            LEFT JOIN Users u ON a.doctor_id = u.id
+            FROM appointments a
+            JOIN pets p ON a.pet_id = p.id
+            LEFT JOIN pet_owners o ON p.owner_id = o.id
+            LEFT JOIN users u ON a.doctor_id = u.id
             WHERE a.id = ?
         `;
         const [rows] = await db.query(query, [id]);
@@ -52,7 +52,7 @@ class AppointmentService {
         // Double booking prevention
         if (doctorId) {
             const conflictQuery = `
-                SELECT id FROM Appointments 
+                SELECT id FROM appointments 
                 WHERE doctor_id = ? AND appointment_date = ? AND appointment_time = ? AND status != 'Cancelled'
             `;
             const [conflicts] = await db.query(conflictQuery, [doctorId, appointmentDate, appointmentTime]);
@@ -62,7 +62,7 @@ class AppointmentService {
         }
         
         const query = `
-            INSERT INTO Appointments (
+            INSERT INTO appointments (
                 id, pet_id, doctor_id, appointment_date, appointment_time, 
                 appointment_type, status, notes
             ) VALUES (?, ?, ?, ?, ?, ?, 'Pending', ?)
@@ -81,7 +81,7 @@ class AppointmentService {
         
         if (doctorId && appointmentDate && appointmentTime) {
             const conflictQuery = `
-                SELECT id FROM Appointments 
+                SELECT id FROM appointments 
                 WHERE doctor_id = ? AND appointment_date = ? AND appointment_time = ? AND id != ? AND status != 'Cancelled'
             `;
             const [conflicts] = await db.query(conflictQuery, [doctorId, appointmentDate, appointmentTime, id]);
@@ -91,7 +91,7 @@ class AppointmentService {
         }
 
         const query = `
-            UPDATE Appointments SET 
+            UPDATE appointments SET 
                 pet_id = COALESCE(?, pet_id), 
                 doctor_id = COALESCE(?, doctor_id), 
                 appointment_date = COALESCE(?, appointment_date), 
@@ -112,7 +112,7 @@ class AppointmentService {
 
     async deleteAppointment(id) {
         // Soft delete implementation: change status to Cancelled instead of deleting
-        const query = `UPDATE Appointments SET status = 'Cancelled' WHERE id = ?`;
+        const query = `UPDATE appointments SET status = 'Cancelled' WHERE id = ?`;
         const [result] = await db.query(query, [id]);
         return result.affectedRows > 0;
     }
@@ -123,10 +123,10 @@ class AppointmentService {
                    p.name as petName, p.breed as petBreed,
                    o.name as ownerName, o.email as ownerEmail, o.mobile as ownerMobile, o.id as ownerId,
                    u.name as doctorName
-            FROM Appointments a
-            JOIN Pets p ON a.pet_id = p.id
-            JOIN Pet_Owners o ON p.owner_id = o.id
-            LEFT JOIN Users u ON a.doctor_id = u.id
+            FROM appointments a
+            JOIN pets p ON a.pet_id = p.id
+            JOIN pet_owners o ON p.owner_id = o.id
+            LEFT JOIN users u ON a.doctor_id = u.id
             WHERE a.appointment_date >= CURRENT_DATE() AND a.status IN ('Pending', 'Upcoming')
             ORDER BY a.appointment_date ASC, a.appointment_time ASC
         `;
@@ -138,9 +138,9 @@ class AppointmentService {
         // Retrieve full appointment details
         const query = `
             SELECT a.*, p.name as petName, o.name as ownerName, o.email as ownerEmail, o.id as ownerId
-            FROM Appointments a
-            JOIN Pets p ON a.pet_id = p.id
-            JOIN Pet_Owners o ON p.owner_id = o.id
+            FROM appointments a
+            JOIN pets p ON a.pet_id = p.id
+            JOIN pet_owners o ON p.owner_id = o.id
             WHERE a.id = ?
         `;
         const [rows] = await db.query(query, [appointmentId]);
@@ -155,9 +155,9 @@ class AppointmentService {
             throw new Error('No recipient email address specified.');
         }
 
-        // If the email is edited/updated, update the Pet_Owners table with the new email
+        // If the email is edited/updated, update the pet_owners table with the new email
         if (customRecipientEmail && customRecipientEmail.trim() !== '' && customRecipientEmail.trim() !== apt.ownerEmail) {
-            await db.query(`UPDATE Pet_Owners SET email = ? WHERE id = ?`, [customRecipientEmail.trim(), apt.ownerId]);
+            await db.query(`UPDATE pet_owners SET email = ? WHERE id = ?`, [customRecipientEmail.trim(), apt.ownerId]);
         }
 
         const emailService = require('./emailService');
@@ -167,17 +167,17 @@ class AppointmentService {
             text: customMessageBody
         });
 
-        // Log to Email_Reminders
+        // Log to email_reminders
         const reminderId = 'rem-' + crypto.randomUUID().slice(0, 8);
         await db.query(
-            `INSERT INTO Email_Reminders (id, appointment_id, recipient_email, scheduled_at, sent_at, status) 
+            `INSERT INTO email_reminders (id, appointment_id, recipient_email, scheduled_at, sent_at, status) 
              VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Sent')`,
             [reminderId, appointmentId, emailToUse]
         );
 
         // Update Appointment reminder status
         await db.query(
-            `UPDATE Appointments SET reminder_sent = TRUE WHERE id = ?`,
+            `UPDATE appointments SET reminder_sent = TRUE WHERE id = ?`,
             [appointmentId]
         );
 

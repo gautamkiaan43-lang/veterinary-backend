@@ -14,7 +14,7 @@ const loginUser = async (req, res) => {
         }
 
         // Check if user exists by email or username
-        const [users] = await db.query('SELECT * FROM Users WHERE email = ? OR username = ?', [email, email]);
+        const [users] = await db.query('SELECT * FROM users WHERE email = ? OR username = ?', [email, email]);
         
         if (users.length === 0) {
             return res.status(401).json({ status: 'error', message: 'Invalid credentials' });

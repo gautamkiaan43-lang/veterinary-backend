@@ -20,7 +20,7 @@ const getInventoryItem = async (req, res) => {
     try {
         const item = await inventoryService.getItemById(req.params.id);
         if (!item) {
-            return res.status(404).json({ status: 'error', message: 'Inventory item not found' });
+            return res.status(404).json({ status: 'error', message: 'inventory item not found' });
         }
         res.json({ status: 'success', data: item });
     } catch (error) {
@@ -62,7 +62,7 @@ const updateInventoryItem = async (req, res) => {
     try {
         const updatedItem = await inventoryService.updateItem(req.params.id, req.body);
         if (!updatedItem) {
-            return res.status(404).json({ status: 'error', message: 'Inventory item not found' });
+            return res.status(404).json({ status: 'error', message: 'inventory item not found' });
         }
         res.json({ status: 'success', data: updatedItem });
     } catch (error) {
@@ -78,9 +78,9 @@ const deleteInventoryItem = async (req, res) => {
     try {
         const deleted = await inventoryService.deleteItem(req.params.id);
         if (!deleted) {
-            return res.status(404).json({ status: 'error', message: 'Inventory item not found' });
+            return res.status(404).json({ status: 'error', message: 'inventory item not found' });
         }
-        res.json({ status: 'success', message: 'Inventory item deleted successfully' });
+        res.json({ status: 'success', message: 'inventory item deleted successfully' });
     } catch (error) {
         console.error('Error deleting inventory item:', error);
         res.status(500).json({ status: 'error', message: 'Failed to delete inventory item' });

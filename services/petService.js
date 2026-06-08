@@ -5,8 +5,8 @@ class PetService {
     async getAllPets() {
         const query = `
             SELECT p.*, o.name as ownerName
-            FROM Pets p
-            JOIN Pet_Owners o ON p.owner_id = o.id
+            FROM pets p
+            JOIN pet_owners o ON p.owner_id = o.id
             ORDER BY p.created_at DESC
         `;
         const [rows] = await db.query(query);
@@ -16,8 +16,8 @@ class PetService {
     async getPetById(id) {
         const query = `
             SELECT p.*, o.name as ownerName
-            FROM Pets p
-            JOIN Pet_Owners o ON p.owner_id = o.id
+            FROM pets p
+            JOIN pet_owners o ON p.owner_id = o.id
             WHERE p.id = ?
         `;
         const [rows] = await db.query(query, [id]);
@@ -33,7 +33,7 @@ class PetService {
         } = data;
         
         const query = `
-            INSERT INTO Pets (
+            INSERT INTO pets (
                 id, owner_id, microchip_number, name, species, breed, gender, 
                 neutered_status, age, weight, previous_medical_history, 
                 last_vaccination, last_deworming, photo_url
@@ -58,7 +58,7 @@ class PetService {
         } = data;
         
         const query = `
-            UPDATE Pets SET 
+            UPDATE pets SET 
                 owner_id = ?, microchip_number = ?, name = ?, species = ?, 
                 breed = ?, gender = ?, neutered_status = ?, age = ?, weight = ?, 
                 previous_medical_history = ?, last_vaccination = ?, 
@@ -78,7 +78,7 @@ class PetService {
     }
 
     async deletePet(id) {
-        const [result] = await db.query('DELETE FROM Pets WHERE id = ?', [id]);
+        const [result] = await db.query('DELETE FROM pets WHERE id = ?', [id]);
         return result.affectedRows > 0;
     }
 }

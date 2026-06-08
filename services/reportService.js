@@ -12,7 +12,7 @@ class ReportService {
                 DATE_FORMAT(invoice_date, '%b') as month,
                 DATE_FORMAT(invoice_date, '%Y-%m') as sortKey,
                 SUM(grand_total) as revenue
-            FROM Invoices
+            FROM invoices
             WHERE status = 'Paid'
             GROUP BY DATE_FORMAT(invoice_date, '%b'), DATE_FORMAT(invoice_date, '%Y-%m')
             ORDER BY sortKey ASC
@@ -33,12 +33,12 @@ class ReportService {
                 COALESCE(SUM(grand_total), 0) as grossYield,
                 COALESCE(SUM(grand_total) / NULLIF(COUNT(id), 0), 0) as averageTicket,
                 COUNT(id) as totalInvoices
-            FROM Invoices
+            FROM invoices
             WHERE status = 'Paid'
         `);
 
         const [activePatientsRows] = await db.query(`
-            SELECT COUNT(*) as count FROM Pets
+            SELECT COUNT(*) as count FROM pets
         `);
 
         return {
@@ -67,7 +67,7 @@ class ReportService {
                 SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed,
                 SUM(CASE WHEN status IN ('Upcoming', 'Confirmed', 'Pending') THEN 1 ELSE 0 END) as upcoming,
                 SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled
-            FROM Appointments
+            FROM appointments
             GROUP BY WEEKDAY(appointment_date)
             ORDER BY weekdayIdx ASC
         `);
@@ -92,12 +92,12 @@ class ReportService {
     }
 
     async getPatientDemographics() {
-        const [totalRows] = await db.query('SELECT COUNT(*) as total FROM Pets');
+        const [totalRows] = await db.query('SELECT COUNT(*) as total FROM pets');
         const total = totalRows[0].total || 1;
 
         const [rows] = await db.query(`
             SELECT species, COUNT(*) as count 
-            FROM Pets 
+            FROM pets 
             GROUP BY species 
             ORDER BY count DESC
         `);
@@ -117,7 +117,7 @@ class ReportService {
         });
 
         if (mapped.length === 0) {
-            mapped = [{ name: 'No Pets', value: 100, color: '#cbd5e1' }];
+            mapped = [{ name: 'No pets', value: 100, color: '#cbd5e1' }];
         }
 
         return mapped;
@@ -129,10 +129,10 @@ class ReportService {
                 u.name,
                 COALESCE((SELECT COUNT(DISTINCT pet_id) FROM Clinical_Encounters WHERE doctor_id = u.id), 0) as patients,
                 COALESCE((SELECT COUNT(*) FROM Clinical_Encounters WHERE doctor_id = u.id), 0) as consultations,
-                COALESCE((SELECT COUNT(*) FROM Home_Visits WHERE doctor_id = u.id AND visit_status = 'Completed'), 0) as home_visits,
-                COALESCE((SELECT SUM(grand_total) FROM Invoices WHERE doctor_id = u.id AND status = 'Paid'), 0) as revenue,
-                COALESCE((SELECT SUM(working_hours) FROM Attendance WHERE user_id = u.id AND status = 'Present'), 0) as hours
-            FROM Users u
+                COALESCE((SELECT COUNT(*) FROM home_visits WHERE doctor_id = u.id AND visit_status = 'Completed'), 0) as home_visits,
+                COALESCE((SELECT SUM(grand_total) FROM invoices WHERE doctor_id = u.id AND status = 'Paid'), 0) as revenue,
+                COALESCE((SELECT SUM(working_hours) FROM attendance WHERE user_id = u.id AND status = 'Present'), 0) as hours
+            FROM users u
             WHERE u.role = 'Doctor' AND u.status = 'Active'
             ORDER BY consultations DESC, home_visits DESC
         `);
@@ -161,7 +161,7 @@ class ReportService {
                     WHEN quantity <= 0 THEN 'Out of Stock'
                     ELSE 'Low Stock'
                 END as status
-            FROM Inventory
+            FROM inventory
             WHERE quantity <= low_stock_threshold OR expiry_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
             ORDER BY quantity ASC
         `);

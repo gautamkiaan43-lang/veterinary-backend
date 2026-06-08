@@ -3,12 +3,12 @@ const crypto = require('crypto');
 
 class InventoryService {
     async getAllItems() {
-        const [rows] = await db.query('SELECT * FROM Inventory ORDER BY created_at DESC');
+        const [rows] = await db.query('SELECT * FROM inventory ORDER BY created_at DESC');
         return rows;
     }
 
     async getItemById(id) {
-        const [rows] = await db.query('SELECT * FROM Inventory WHERE id = ?', [id]);
+        const [rows] = await db.query('SELECT * FROM inventory WHERE id = ?', [id]);
         return rows[0];
     }
 
@@ -17,7 +17,7 @@ class InventoryService {
         const { sku, name, category, supplier, quantity, low_stock_threshold, cost_price, selling_price, is_taxable, expiry_date } = data;
         
         const query = `
-            INSERT INTO Inventory (id, sku, name, category, supplier, quantity, low_stock_threshold, cost_price, selling_price, is_taxable, expiry_date) 
+            INSERT INTO inventory (id, sku, name, category, supplier, quantity, low_stock_threshold, cost_price, selling_price, is_taxable, expiry_date) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         
@@ -36,7 +36,7 @@ class InventoryService {
         const { name, category, supplier, quantity, low_stock_threshold, cost_price, selling_price, is_taxable, expiry_date } = data;
         
         const query = `
-            UPDATE Inventory 
+            UPDATE inventory 
             SET name = ?, category = ?, supplier = ?, quantity = ?, low_stock_threshold = ?, cost_price = ?, selling_price = ?, is_taxable = ?, expiry_date = ?
             WHERE id = ?
         `;
@@ -48,7 +48,7 @@ class InventoryService {
     }
 
     async deleteItem(id) {
-        const [result] = await db.query('DELETE FROM Inventory WHERE id = ?', [id]);
+        const [result] = await db.query('DELETE FROM inventory WHERE id = ?', [id]);
         return result.affectedRows > 0;
     }
 }

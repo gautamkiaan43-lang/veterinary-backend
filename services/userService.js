@@ -4,7 +4,7 @@ const crypto = require('crypto');
 
 class UserService {
     async getAllUsers(filters = {}) {
-        let query = 'SELECT id, name, role, email, phone, username, department, status, profile_image, created_at FROM Users';
+        let query = 'SELECT id, name, role, email, phone, username, department, status, profile_image, created_at FROM users';
         let params = [];
         
         let conditions = [];
@@ -28,7 +28,7 @@ class UserService {
     }
 
     async getUserById(id) {
-        const [users] = await db.query('SELECT id, name, role, email, phone, username, department, status, profile_image, created_at FROM Users WHERE id = ?', [id]);
+        const [users] = await db.query('SELECT id, name, role, email, phone, username, department, status, profile_image, created_at FROM users WHERE id = ?', [id]);
         return users.length > 0 ? users[0] : null;
     }
 
@@ -42,7 +42,7 @@ class UserService {
         const finalStatus = status || 'Active';
         
         const query = `
-            INSERT INTO Users (id, name, email, password_hash, role, phone, username, department, profile_image, status)
+            INSERT INTO users (id, name, email, password_hash, role, phone, username, department, profile_image, status)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         
@@ -53,7 +53,7 @@ class UserService {
     async updateUser(id, userData) {
         const { fullName, email, phone, username, password, role, department, status, photoUrl } = userData;
         
-        let query = 'UPDATE Users SET name=?, email=?, role=?, phone=?, username=?, department=?, status=?, profile_image=?';
+        let query = 'UPDATE users SET name=?, email=?, role=?, phone=?, username=?, department=?, status=?, profile_image=?';
         let params = [fullName, email, role, phone, username, department, photoUrl || null, status];
         
         if (password && password.trim() !== '') {
@@ -75,7 +75,7 @@ class UserService {
     async updateProfile(id, profileData) {
         const { fullName, email, phone, password } = profileData;
         
-        let query = 'UPDATE Users SET name=?, email=?, phone=?';
+        let query = 'UPDATE users SET name=?, email=?, phone=?';
         let params = [fullName, email, phone];
         
         if (password && password.trim() !== '') {
@@ -96,7 +96,7 @@ class UserService {
 
     async deleteUser(id) {
         // Hard delete implementation
-        const [result] = await db.query("DELETE FROM Users WHERE id = ?", [id]);
+        const [result] = await db.query("DELETE FROM users WHERE id = ?", [id]);
         return result.affectedRows > 0;
     }
 }

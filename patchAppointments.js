@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const targetFile = path.resolve('..', 'Frontend', 'src', 'components', 'Appointments.jsx');
+const targetFile = path.resolve('..', 'Frontend', 'src', 'components', 'appointments.jsx');
 let content = fs.readFileSync(targetFile, 'utf8');
 
 // 1. Add imports
@@ -11,14 +11,14 @@ content = content.replace(
 );
 
 // 2. Replace state initialization
-const oldStateStart = `export default function Appointments({ currentRole }) {
+const oldStateStart = `export default function appointments({ currentRole }) {
   const [appointments, setAppointments] = useState(
     currentRole === 'Doctor'
       ? APPOINTMENTS.filter((a) => a.doctorName === 'Dr. Sarah Connor')
       : APPOINTMENTS
   );`;
 
-const newState = `export default function Appointments({ currentRole }) {
+const newState = `export default function appointments({ currentRole }) {
   const [appointments, setAppointments] = useState([]);
   const [petOwners, setPetOwners] = useState([]);
   const [pets, setPets] = useState([]);
@@ -228,4 +228,4 @@ const mainReturn = `    <div className="appointments-page">`;
 content = content.replace(mainReturn, `    <div className="appointments-page">\n      {loading && <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/50 backdrop-blur-sm"><Loader className="animate-spin text-primary" size={32} /></div>}`);
 
 fs.writeFileSync(targetFile, content, 'utf8');
-console.log('Appointments.jsx updated successfully.');
+console.log('appointments.jsx updated successfully.');

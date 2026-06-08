@@ -13,7 +13,7 @@ exports.getNotifications = async (req, res) => {
                 type,
                 is_read,
                 created_at
-             FROM Notifications 
+             FROM notifications 
              WHERE user_id = ? OR user_id IS NULL 
              ORDER BY created_at DESC 
              LIMIT 15`,
@@ -30,7 +30,7 @@ exports.markAsRead = async (req, res) => {
     try {
         const { id } = req.params;
         const [result] = await db.query(
-            'UPDATE Notifications SET is_read = TRUE WHERE id = ?',
+            'UPDATE notifications SET is_read = TRUE WHERE id = ?',
             [id]
         );
         if (result.affectedRows === 0) {
@@ -47,7 +47,7 @@ exports.markAllAsRead = async (req, res) => {
     try {
         const userId = req.user.id;
         await db.query(
-            'UPDATE Notifications SET is_read = TRUE WHERE user_id = ? OR user_id IS NULL',
+            'UPDATE notifications SET is_read = TRUE WHERE user_id = ? OR user_id IS NULL',
             [userId]
         );
         res.status(200).json({ status: 'success', message: 'All notifications marked as read' });

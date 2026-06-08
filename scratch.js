@@ -29,8 +29,8 @@ async function testBillingAPI() {
         console.log("Fetching invoices...");
         const invoicesRes = await fetch('http://localhost:5000/api/v1/invoices', { headers });
         const invoicesData = await invoicesRes.json();
-        console.log("Invoices Response Status:", invoicesRes.status);
-        console.log("Invoices Data:", JSON.stringify(invoicesData, null, 2));
+        console.log("invoices Response Status:", invoicesRes.status);
+        console.log("invoices Data:", JSON.stringify(invoicesData, null, 2));
 
     } catch (err) {
         console.error("Error:", err);

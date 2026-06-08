@@ -36,7 +36,7 @@ exports.createEncounter = async (encounterData, doctorId) => {
                 // Look up matching inventory item (Category: Medicine)
                 let inventoryId = null;
                 const [inv] = await conn.query(
-                    `SELECT id FROM Inventory WHERE category = 'Medicine' AND ? LIKE CONCAT('%', name, '%') LIMIT 1`,
+                    `SELECT id FROM inventory WHERE category = 'Medicine' AND ? LIKE CONCAT('%', name, '%') LIMIT 1`,
                     [rx.medicine_name]
                 );
                 if (inv.length > 0) {
@@ -95,7 +95,7 @@ exports.getEncountersByPet = async (petId) => {
     const [encounters] = await db.query(
         `SELECT ce.*, u.name as doctor_name 
          FROM Clinical_Encounters ce 
-         LEFT JOIN Users u ON ce.doctor_id = u.id 
+         LEFT JOIN users u ON ce.doctor_id = u.id 
          WHERE ce.pet_id = ? 
          ORDER BY ce.encounter_date DESC`,
         [petId]
@@ -123,9 +123,9 @@ exports.getAllEncounters = async () => {
     const [encounters] = await db.query(
         `SELECT ce.*, p.name as pet_name, po.name as owner_name, u.name as doctor_name 
          FROM Clinical_Encounters ce 
-         JOIN Pets p ON ce.pet_id = p.id
-         JOIN Pet_Owners po ON p.owner_id = po.id
-         LEFT JOIN Users u ON ce.doctor_id = u.id 
+         JOIN pets p ON ce.pet_id = p.id
+         JOIN pet_owners po ON p.owner_id = po.id
+         LEFT JOIN users u ON ce.doctor_id = u.id 
          ORDER BY ce.encounter_date DESC`
     );
     return encounters;

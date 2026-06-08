@@ -4,10 +4,10 @@ const crypto = require('crypto');
 exports.getAllInvoices = async () => {
     const [rows] = await db.query(`
         SELECT i.*, po.name as ownerName, p.name as petName, u.name as doctorName
-        FROM Invoices i
-        LEFT JOIN Pet_Owners po ON i.owner_id = po.id
-        LEFT JOIN Pets p ON i.pet_id = p.id
-        LEFT JOIN Users u ON i.doctor_id = u.id
+        FROM invoices i
+        LEFT JOIN pet_owners po ON i.owner_id = po.id
+        LEFT JOIN pets p ON i.pet_id = p.id
+        LEFT JOIN users u ON i.doctor_id = u.id
         ORDER BY i.invoice_date DESC, i.id DESC
     `);
     return rows;
@@ -16,10 +16,10 @@ exports.getAllInvoices = async () => {
 exports.getInvoiceById = async (id) => {
     const [invoices] = await db.query(`
         SELECT i.*, po.name as ownerName, p.name as petName, u.name as doctorName
-        FROM Invoices i
-        LEFT JOIN Pet_Owners po ON i.owner_id = po.id
-        LEFT JOIN Pets p ON i.pet_id = p.id
-        LEFT JOIN Users u ON i.doctor_id = u.id
+        FROM invoices i
+        LEFT JOIN pet_owners po ON i.owner_id = po.id
+        LEFT JOIN pets p ON i.pet_id = p.id
+        LEFT JOIN users u ON i.doctor_id = u.id
         WHERE i.id = ?
     `, [id]);
     
@@ -29,7 +29,7 @@ exports.getInvoiceById = async (id) => {
     const [lineItems] = await db.query(`
         SELECT ili.*, inv.name, inv.category
         FROM Invoice_Line_Items ili
-        LEFT JOIN Inventory inv ON ili.inventory_id = inv.id
+        LEFT JOIN inventory inv ON ili.inventory_id = inv.id
         WHERE ili.invoice_id = ?
     `, [id]);
     
@@ -38,14 +38,14 @@ exports.getInvoiceById = async (id) => {
 };
 
 exports.getUnbilledRecords = async () => {
-    // 1. Clinical Encounters not billed
+    // 1. Clinical encounters not billed
     const [encounters] = await db.query(`
         SELECT ce.*, p.name as petName, p.breed as petBreed, po.name as ownerName, po.id as ownerId, u.name as doctorName
         FROM Clinical_Encounters ce
-        JOIN Pets p ON ce.pet_id = p.id
-        JOIN Pet_Owners po ON p.owner_id = po.id
-        LEFT JOIN Users u ON ce.doctor_id = u.id
-        LEFT JOIN Invoices i ON ce.id = i.encounter_id AND i.status != 'Cancelled'
+        JOIN pets p ON ce.pet_id = p.id
+        JOIN pet_owners po ON p.owner_id = po.id
+        LEFT JOIN users u ON ce.doctor_id = u.id
+        LEFT JOIN invoices i ON ce.id = i.encounter_id AND i.status != 'Cancelled'
         WHERE i.id IS NULL
         ORDER BY ce.encounter_date DESC
     `);
@@ -55,7 +55,7 @@ exports.getUnbilledRecords = async () => {
         const [prescriptions] = await db.query(`
             SELECT p.*, inv.sku, inv.selling_price
             FROM Prescriptions p
-            LEFT JOIN Inventory inv ON p.inventory_id = inv.id
+            LEFT JOIN inventory inv ON p.inventory_id = inv.id
             WHERE p.encounter_id = ?
         `, [enc.id]);
         enc.prescriptions = prescriptions;
@@ -69,11 +69,11 @@ exports.getUnbilledRecords = async () => {
     // 2. Completed Home Visits not billed
     const [homeVisits] = await db.query(`
         SELECT hv.*, p.name as petName, p.breed as petBreed, po.name as ownerName, po.id as ownerId, u.name as doctorName
-        FROM Home_Visits hv
-        JOIN Pets p ON hv.pet_id = p.id
-        JOIN Pet_Owners po ON hv.owner_id = po.id
-        LEFT JOIN Users u ON hv.doctor_id = u.id
-        LEFT JOIN Invoices i ON hv.id = i.home_visit_id AND i.status != 'Cancelled'
+        FROM home_visits hv
+        JOIN pets p ON hv.pet_id = p.id
+        JOIN pet_owners po ON hv.owner_id = po.id
+        LEFT JOIN users u ON hv.doctor_id = u.id
+        LEFT JOIN invoices i ON hv.id = i.home_visit_id AND i.status != 'Cancelled'
         WHERE hv.visit_status = 'Completed' AND i.id IS NULL
         ORDER BY hv.id DESC
     `);
@@ -89,7 +89,7 @@ exports.createInvoice = async (invoiceData) => {
         // 1. Generate sequential human-readable invoice ID: INV-YYYY-XXXX
         const year = new Date().getFullYear();
         const [countRows] = await conn.query(
-            `SELECT COUNT(*) as count FROM Invoices WHERE invoice_date >= ?`,
+            `SELECT COUNT(*) as count FROM invoices WHERE invoice_date >= ?`,
             [`${year}-01-01`]
         );
         const sequence = countRows[0].count + 1;
@@ -98,9 +98,9 @@ exports.createInvoice = async (invoiceData) => {
         const invoiceDate = invoiceData.invoice_date || new Date().toISOString().split('T')[0];
         const status = invoiceData.status || 'Pending';
 
-        // 2. Insert Invoices Row
+        // 2. Insert invoices Row
         await conn.query(
-            `INSERT INTO Invoices (
+            `INSERT INTO invoices (
                 id, owner_id, pet_id, doctor_id, invoice_date, 
                 subtotal, tax_amount, discount_amount, grand_total, status,
                 encounter_id, home_visit_id
@@ -161,7 +161,7 @@ exports.updateInvoiceStatus = async (id, newStatus) => {
         await conn.beginTransaction();
 
         // 1. Get current invoice status
-        const [invoices] = await conn.query('SELECT status FROM Invoices WHERE id = ?', [id]);
+        const [invoices] = await conn.query('SELECT status FROM invoices WHERE id = ?', [id]);
         if (invoices.length === 0) {
             throw new Error('Invoice not found');
         }
@@ -177,7 +177,7 @@ exports.updateInvoiceStatus = async (id, newStatus) => {
         }
 
         // 3. Update Invoice status
-        await conn.query('UPDATE Invoices SET status = ? WHERE id = ?', [newStatus, id]);
+        await conn.query('UPDATE invoices SET status = ? WHERE id = ?', [newStatus, id]);
 
         // 4. If transition to Paid, deduct stock
         if (newStatus === 'Paid') {
@@ -204,7 +204,7 @@ async function deductStock(conn, lineItems) {
 
         // Retrieve current quantity and low stock threshold
         const [invRows] = await conn.query(
-            'SELECT name, quantity, low_stock_threshold FROM Inventory WHERE id = ?', 
+            'SELECT name, quantity, low_stock_threshold FROM inventory WHERE id = ?', 
             [item.inventory_id]
         );
         if (invRows.length === 0) continue;
@@ -215,19 +215,19 @@ async function deductStock(conn, lineItems) {
 
         const newQty = invItem.quantity - item.quantity;
 
-        // Update Inventory level
-        await conn.query('UPDATE Inventory SET quantity = ? WHERE id = ?', [newQty, item.inventory_id]);
+        // Update inventory level
+        await conn.query('UPDATE inventory SET quantity = ? WHERE id = ?', [newQty, item.inventory_id]);
 
         // Check low-stock threshold alert
         if (newQty <= invItem.low_stock_threshold) {
             const notifId = crypto.randomUUID();
             const title = 'Low Stock Alert';
-            const message = `Inventory item "${invItem.name}" has run low. Current: ${newQty}, Threshold: ${invItem.low_stock_threshold}.`;
+            const message = `inventory item "${invItem.name}" has run low. Current: ${newQty}, Threshold: ${invItem.low_stock_threshold}.`;
             
             // Insert notification for Admins
             await conn.query(
-                `INSERT INTO Notifications (id, user_id, title, message, type, is_read) 
-                 VALUES (?, NULL, ?, ?, 'Inventory', FALSE)`,
+                `INSERT INTO notifications (id, user_id, title, message, type, is_read) 
+                 VALUES (?, NULL, ?, ?, 'inventory', FALSE)`,
                 [notifId, title, message]
             );
         }
