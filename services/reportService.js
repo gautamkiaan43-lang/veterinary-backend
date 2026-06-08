@@ -55,15 +55,6 @@ class ReportService {
         const [rows] = await db.query(`
             SELECT 
                 WEEKDAY(appointment_date) as weekdayIdx,
-                CASE WEEKDAY(appointment_date)
-                    WHEN 0 THEN 'Mon'
-                    WHEN 1 THEN 'Tue'
-                    WHEN 2 THEN 'Wed'
-                    WHEN 3 THEN 'Thu'
-                    WHEN 4 THEN 'Fri'
-                    WHEN 5 THEN 'Sat'
-                    WHEN 6 THEN 'Sun'
-                END as dayName,
                 SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed,
                 SUM(CASE WHEN status IN ('Upcoming', 'Confirmed', 'Pending') THEN 1 ELSE 0 END) as upcoming,
                 SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled
@@ -80,10 +71,11 @@ class ReportService {
         });
 
         rows.forEach(r => {
-            if (r.dayName && weekdayMap[r.dayName]) {
-                weekdayMap[r.dayName].completed = parseInt(r.completed) || 0;
-                weekdayMap[r.dayName].upcoming = parseInt(r.upcoming) || 0;
-                weekdayMap[r.dayName].cancelled = parseInt(r.cancelled) || 0;
+            const dayName = weekdays[r.weekdayIdx];
+            if (dayName && weekdayMap[dayName]) {
+                weekdayMap[dayName].completed = parseInt(r.completed) || 0;
+                weekdayMap[dayName].upcoming = parseInt(r.upcoming) || 0;
+                weekdayMap[dayName].cancelled = parseInt(r.cancelled) || 0;
             }
         });
 
