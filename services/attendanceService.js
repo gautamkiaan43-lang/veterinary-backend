@@ -17,7 +17,7 @@ class AttendanceService {
             WHERE u.status = 'Active' OR u.status = 'On Leave'
             ORDER BY u.name ASC
         `, [date, date, date, date, date]);
-        
+
         return rows.map(r => {
             // Compute activity text based on role
             let activity = '';
@@ -30,7 +30,7 @@ class AttendanceService {
             } else {
                 activity = 'System Oversight';
             }
-            
+
             return {
                 id: r.id,
                 name: r.name,
@@ -44,6 +44,11 @@ class AttendanceService {
         });
     }
 
+
+
+
+
+
     async getPersonalHistory(userId) {
         const [rows] = await db.query(`
             SELECT DATE_FORMAT(attendance_date, '%Y-%m-%d') as date, check_in as checkIn, check_out as checkOut, working_hours as hours, status
@@ -52,7 +57,7 @@ class AttendanceService {
             ORDER BY attendance_date DESC
             LIMIT 30
         `, [userId]);
-        
+
         return rows.map(r => ({
             ...r,
             checkIn: r.checkIn || '--',
@@ -65,13 +70,13 @@ class AttendanceService {
         // Check if already checked in
         const [existing] = await db.query('SELECT id FROM attendance WHERE user_id = ? AND attendance_date = ?', [userId, date]);
         if (existing.length > 0) throw new Error('Already checked in today');
-        
+
         const id = 'att-' + crypto.randomUUID().slice(0, 8);
         await db.query(`
             INSERT INTO attendance (id, user_id, attendance_date, check_in, status)
             VALUES (?, ?, ?, ?, 'Present')
         `, [id, userId, date, time]);
-        
+
         return { success: true };
     }
 
@@ -79,11 +84,11 @@ class AttendanceService {
         const [existing] = await db.query('SELECT id, check_in FROM attendance WHERE user_id = ? AND attendance_date = ?', [userId, date]);
         if (existing.length === 0) throw new Error('No check-in found for today');
         if (!existing[0].check_in) throw new Error('No check-in time recorded');
-        
+
         // Calculate hours
         const [checkInHours, checkInMins] = existing[0].check_in.split(':').map(Number);
         const [checkOutHours, checkOutMins] = time.split(':').map(Number);
-        
+
         let diffHours = checkOutHours - checkInHours;
         let diffMins = checkOutMins - checkInMins;
         if (diffMins < 0) {
@@ -98,7 +103,7 @@ class AttendanceService {
             SET check_out = ?, working_hours = ?
             WHERE id = ?
         `, [time, totalHours, existing[0].id]);
-        
+
         return { success: true, workingHours: totalHours.toFixed(2) };
     }
 }
