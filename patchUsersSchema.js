@@ -2,9 +2,9 @@ const db = require('./config/db');
 
 async function patchUsersSchema() {
     try {
-        console.log("Adding columns to users table...");
+        console.log("Adding columns to Users table...");
         await db.query(`
-            ALTER TABLE users
+            ALTER TABLE Users
             ADD COLUMN username VARCHAR(50) UNIQUE NULL,
             ADD COLUMN department VARCHAR(100) NULL
         `);

@@ -28,7 +28,7 @@ exports.getInvoiceById = async (id) => {
     const invoice = invoices[0];
     const [lineItems] = await db.query(`
         SELECT ili.*, inv.name, inv.category
-        FROM Invoice_Line_Items ili
+        FROM invoice_line_items ili
         LEFT JOIN inventory inv ON ili.inventory_id = inv.id
         WHERE ili.invoice_id = ?
     `, [id]);
@@ -38,10 +38,10 @@ exports.getInvoiceById = async (id) => {
 };
 
 exports.getUnbilledRecords = async () => {
-    // 1. Clinical encounters not billed
+    // 1. Clinical Encounters not billed
     const [encounters] = await db.query(`
         SELECT ce.*, p.name as petName, p.breed as petBreed, po.name as ownerName, po.id as ownerId, u.name as doctorName
-        FROM Clinical_Encounters ce
+        FROM clinical_encounters ce
         JOIN pets p ON ce.pet_id = p.id
         JOIN pet_owners po ON p.owner_id = po.id
         LEFT JOIN users u ON ce.doctor_id = u.id
@@ -54,14 +54,14 @@ exports.getUnbilledRecords = async () => {
     for (const enc of encounters) {
         const [prescriptions] = await db.query(`
             SELECT p.*, inv.sku, inv.selling_price
-            FROM Prescriptions p
+            FROM prescriptions p
             LEFT JOIN inventory inv ON p.inventory_id = inv.id
             WHERE p.encounter_id = ?
         `, [enc.id]);
         enc.prescriptions = prescriptions;
 
         const [reports] = await db.query(`
-            SELECT * FROM Diagnostic_Reports WHERE encounter_id = ?
+            SELECT * FROM diagnostic_reports WHERE encounter_id = ?
         `, [enc.id]);
         enc.reports = reports;
     }
@@ -98,7 +98,7 @@ exports.createInvoice = async (invoiceData) => {
         const invoiceDate = invoiceData.invoice_date || new Date().toISOString().split('T')[0];
         const status = invoiceData.status || 'Pending';
 
-        // 2. Insert invoices Row
+        // 2. Insert Invoices Row
         await conn.query(
             `INSERT INTO invoices (
                 id, owner_id, pet_id, doctor_id, invoice_date, 
@@ -126,7 +126,7 @@ exports.createInvoice = async (invoiceData) => {
             for (const item of invoiceData.lineItems) {
                 const itemId = crypto.randomUUID();
                 await conn.query(
-                    `INSERT INTO Invoice_Line_Items (id, invoice_id, inventory_id, quantity, unit_price, total) 
+                    `INSERT INTO invoice_line_items (id, invoice_id, inventory_id, quantity, unit_price, total) 
                      VALUES (?, ?, ?, ?, ?, ?)`,
                     [
                         itemId,
@@ -181,7 +181,7 @@ exports.updateInvoiceStatus = async (id, newStatus) => {
 
         // 4. If transition to Paid, deduct stock
         if (newStatus === 'Paid') {
-            const [lineItems] = await conn.query('SELECT * FROM Invoice_Line_Items WHERE invoice_id = ?', [id]);
+            const [lineItems] = await conn.query('SELECT * FROM invoice_line_items WHERE invoice_id = ?', [id]);
             await deductStock(conn, lineItems);
         }
 
@@ -215,19 +215,19 @@ async function deductStock(conn, lineItems) {
 
         const newQty = invItem.quantity - item.quantity;
 
-        // Update inventory level
+        // Update Inventory level
         await conn.query('UPDATE inventory SET quantity = ? WHERE id = ?', [newQty, item.inventory_id]);
 
         // Check low-stock threshold alert
         if (newQty <= invItem.low_stock_threshold) {
             const notifId = crypto.randomUUID();
             const title = 'Low Stock Alert';
-            const message = `inventory item "${invItem.name}" has run low. Current: ${newQty}, Threshold: ${invItem.low_stock_threshold}.`;
+            const message = `Inventory item "${invItem.name}" has run low. Current: ${newQty}, Threshold: ${invItem.low_stock_threshold}.`;
             
             // Insert notification for Admins
             await conn.query(
                 `INSERT INTO notifications (id, user_id, title, message, type, is_read) 
-                 VALUES (?, NULL, ?, ?, 'inventory', FALSE)`,
+                 VALUES (?, NULL, ?, ?, 'Inventory', FALSE)`,
                 [notifId, title, message]
             );
         }

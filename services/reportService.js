@@ -117,7 +117,7 @@ class ReportService {
         });
 
         if (mapped.length === 0) {
-            mapped = [{ name: 'No pets', value: 100, color: '#cbd5e1' }];
+            mapped = [{ name: 'No Pets', value: 100, color: '#cbd5e1' }];
         }
 
         return mapped;
@@ -127,8 +127,8 @@ class ReportService {
         const [rows] = await db.query(`
             SELECT 
                 u.name,
-                COALESCE((SELECT COUNT(DISTINCT pet_id) FROM Clinical_Encounters WHERE doctor_id = u.id), 0) as patients,
-                COALESCE((SELECT COUNT(*) FROM Clinical_Encounters WHERE doctor_id = u.id), 0) as consultations,
+                COALESCE((SELECT COUNT(DISTINCT pet_id) FROM clinical_encounters WHERE doctor_id = u.id), 0) as patients,
+                COALESCE((SELECT COUNT(*) FROM clinical_encounters WHERE doctor_id = u.id), 0) as consultations,
                 COALESCE((SELECT COUNT(*) FROM home_visits WHERE doctor_id = u.id AND visit_status = 'Completed'), 0) as home_visits,
                 COALESCE((SELECT SUM(grand_total) FROM invoices WHERE doctor_id = u.id AND status = 'Paid'), 0) as revenue,
                 COALESCE((SELECT SUM(working_hours) FROM attendance WHERE user_id = u.id AND status = 'Present'), 0) as hours

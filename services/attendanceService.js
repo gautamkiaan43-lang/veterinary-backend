@@ -10,7 +10,7 @@ class AttendanceService {
                 a.check_in, a.check_out, a.working_hours, a.status,
                 (SELECT COUNT(*) FROM appointments WHERE doctor_id = u.id AND DATE(appointment_date) = ?) as aptCount,
                 (SELECT COUNT(*) FROM invoices WHERE doctor_id = u.id AND invoice_date = ?) as invoiceCount,
-                (SELECT COUNT(*) FROM Clinical_Encounters WHERE doctor_id = u.id AND encounter_date = ?) as encounterCount,
+                (SELECT COUNT(*) FROM clinical_encounters WHERE doctor_id = u.id AND encounter_date = ?) as encounterCount,
                 (SELECT COUNT(*) FROM home_visits hv JOIN appointments apt ON hv.appointment_id = apt.id WHERE hv.doctor_id = u.id AND DATE(apt.appointment_date) = ?) as hvCount
             FROM users u
             LEFT JOIN attendance a ON u.id = a.user_id AND a.attendance_date = ?

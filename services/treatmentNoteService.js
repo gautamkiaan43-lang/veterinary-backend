@@ -3,11 +3,11 @@ const crypto = require('crypto');
 
 exports.createNote = async (data, userId) => {
     const noteId = crypto.randomUUID();
-    // treatment_notes: id, encounter_id, user_id, note_type, note_text, created_at
+    // Treatment_Notes: id, encounter_id, user_id, note_type, note_text, created_at
     // encounter_id can be null if it's just a general log for the pet. BUT the schema we made says:
     // encounter_id REFERENCES Clinical_Encounters. But TreatmentNotes.jsx doesn't have an encounter context always.
     // Wait, the user asked for: id, encounter_id, user_id, note_type, note_text, created_at
-    // But they didn't put pet_id in treatment_notes! 
+    // But they didn't put pet_id in Treatment_Notes! 
     // Ah, wait. If they didn't put pet_id, then we MUST have an encounter_id to link it to the pet!
     
     // So the frontend MUST pass an encounter_id.
@@ -45,11 +45,11 @@ exports.getNotesByEncounter = async (encounterId) => {
 };
 
 exports.getNotesByPet = async (petId) => {
-    // Since treatment_notes links to Clinical_Encounters, we find notes for all encounters of this pet
+    // Since Treatment_Notes links to Clinical_Encounters, we find notes for all encounters of this pet
     const [notes] = await db.query(
         `SELECT tn.*, u.name as user_name, ce.pet_id, DATE_FORMAT(tn.created_at, '%h:%i %p') as time 
          FROM treatment_notes tn 
-         JOIN Clinical_Encounters ce ON tn.encounter_id = ce.id
+         JOIN clinical_encounters ce ON tn.encounter_id = ce.id
          LEFT JOIN users u ON tn.user_id = u.id 
          WHERE ce.pet_id = ? 
          ORDER BY tn.created_at DESC`,

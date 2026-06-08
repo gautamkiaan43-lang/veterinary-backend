@@ -11,7 +11,7 @@ exports.createEncounter = async (encounterData, doctorId) => {
 
         // Insert Encounter
         await conn.query(
-            `INSERT INTO Clinical_Encounters 
+            `INSERT INTO clinical_encounters 
             (id, pet_id, doctor_id, encounter_date, complaint, duration, symptoms, diagnosis, treatment, follow_up) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
@@ -44,7 +44,7 @@ exports.createEncounter = async (encounterData, doctorId) => {
                 }
 
                 await conn.query(
-                    `INSERT INTO Prescriptions 
+                    `INSERT INTO prescriptions 
                     (id, encounter_id, medicine_name, dosage, frequency, duration, instructions, inventory_id) 
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
@@ -66,7 +66,7 @@ exports.createEncounter = async (encounterData, doctorId) => {
             for (const rep of encounterData.reports) {
                 const repId = crypto.randomUUID();
                 await conn.query(
-                    `INSERT INTO Diagnostic_Reports 
+                    `INSERT INTO diagnostic_reports 
                     (id, encounter_id, report_type, file_url, uploaded_by) 
                     VALUES (?, ?, ?, ?, ?)`,
                     [
@@ -94,7 +94,7 @@ exports.getEncountersByPet = async (petId) => {
     // Get encounters
     const [encounters] = await db.query(
         `SELECT ce.*, u.name as doctor_name 
-         FROM Clinical_Encounters ce 
+         FROM clinical_encounters ce 
          LEFT JOIN users u ON ce.doctor_id = u.id 
          WHERE ce.pet_id = ? 
          ORDER BY ce.encounter_date DESC`,
@@ -104,13 +104,13 @@ exports.getEncountersByPet = async (petId) => {
     // Get all related records and map them
     for (const enc of encounters) {
         const [prescriptions] = await db.query(
-            `SELECT * FROM Prescriptions WHERE encounter_id = ?`,
+            `SELECT * FROM prescriptions WHERE encounter_id = ?`,
             [enc.id]
         );
         enc.prescriptions = prescriptions;
 
         const [reports] = await db.query(
-            `SELECT * FROM Diagnostic_Reports WHERE encounter_id = ?`,
+            `SELECT * FROM diagnostic_reports WHERE encounter_id = ?`,
             [enc.id]
         );
         enc.reports = reports;
@@ -122,7 +122,7 @@ exports.getEncountersByPet = async (petId) => {
 exports.getAllEncounters = async () => {
     const [encounters] = await db.query(
         `SELECT ce.*, p.name as pet_name, po.name as owner_name, u.name as doctor_name 
-         FROM Clinical_Encounters ce 
+         FROM clinical_encounters ce 
          JOIN pets p ON ce.pet_id = p.id
          JOIN pet_owners po ON p.owner_id = po.id
          LEFT JOIN users u ON ce.doctor_id = u.id 

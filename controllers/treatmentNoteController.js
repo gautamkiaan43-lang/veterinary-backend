@@ -12,7 +12,7 @@ exports.createNote = async (req, res) => {
         // If frontend passes pet_id but no encounter_id, find the latest encounter
         if (!encounter_id && pet_id) {
             const [encounters] = await db.query(
-                `SELECT id FROM Clinical_Encounters WHERE pet_id = ? ORDER BY encounter_date DESC LIMIT 1`,
+                `SELECT id FROM clinical_encounters WHERE pet_id = ? ORDER BY encounter_date DESC LIMIT 1`,
                 [pet_id]
             );
             if (encounters.length > 0) {

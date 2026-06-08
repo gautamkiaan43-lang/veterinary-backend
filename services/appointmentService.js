@@ -155,7 +155,7 @@ class AppointmentService {
             throw new Error('No recipient email address specified.');
         }
 
-        // If the email is edited/updated, update the pet_owners table with the new email
+        // If the email is edited/updated, update the Pet_Owners table with the new email
         if (customRecipientEmail && customRecipientEmail.trim() !== '' && customRecipientEmail.trim() !== apt.ownerEmail) {
             await db.query(`UPDATE pet_owners SET email = ? WHERE id = ?`, [customRecipientEmail.trim(), apt.ownerId]);
         }
@@ -167,7 +167,7 @@ class AppointmentService {
             text: customMessageBody
         });
 
-        // Log to email_reminders
+        // Log to Email_Reminders
         const reminderId = 'rem-' + crypto.randomUUID().slice(0, 8);
         await db.query(
             `INSERT INTO email_reminders (id, appointment_id, recipient_email, scheduled_at, sent_at, status) 

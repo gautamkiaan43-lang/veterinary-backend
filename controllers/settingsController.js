@@ -71,7 +71,7 @@ exports.updateSettings = async (req, res) => {
         );
 
         const [rows] = await db.query('SELECT * FROM Clinic_Settings WHERE id = 1');
-        res.status(200).json({ status: 'success', message: 'settings updated successfully', data: rows[0] });
+        res.status(200).json({ status: 'success', message: 'Settings updated successfully', data: rows[0] });
     } catch (error) {
         console.error('Error updating settings:', error);
         res.status(500).json({ status: 'error', message: 'Failed to update settings' });
